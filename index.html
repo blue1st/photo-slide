@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>Photo Slide</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="dark-theme">
+  <div id="app">
+    <header id="top-bar">
+      <div class="toolbar-row">
+        <div class="toolbar-left">
+          <button id="btn-open">フォルダを開く</button>
+          <div class="file-info-group">
+            <span id="file-name">ファイルを選択してください</span>
+          </div>
+          <div class="file-actions">
+            <button id="btn-rename-trigger" title="名前変更">✎</button>
+            <button id="btn-copy-path" title="パスコピー">🔗</button>
+            <button id="btn-copy-img" title="画像コピー">🖼️</button>
+          </div>
+          <span id="display-mode-label">モード: 収まる</span>
+        </div>
+        <div class="toolbar-right">
+          <div id="tag-editor">
+            <div id="current-tags-container"></div>
+            <div class="add-tag-group">
+              <input type="text" id="input-single-tag" list="tag-suggestions" placeholder="タグを入力してEnter">
+              <datalist id="tag-suggestions"></datalist>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="filter-row">
+        <span class="label">タグ絞り込み:</span>
+        <div id="all-tags-list"></div>
+        <button id="btn-clear-filter">クリア</button>
+      </div>
+    </header>
+
+    <div id="rename-modal" class="modal">
+      <div class="modal-content">
+        <h3>ファイル名の変更</h3>
+        <input type="text" id="input-new-name">
+        <div class="modal-buttons">
+          <button id="btn-rename-cancel">キャンセル</button>
+          <button id="btn-rename-confirm">適用</button>
+        </div>
+      </div>
+    </div>
+
+    <main id="viewer">
+      <img id="main-image" src="" alt="Photo">
+      <div id="controls">
+        <button id="btn-prev">◀</button>
+        <button id="btn-next">▶</button>
+      </div>
+    </main>
+  </div>
+  <script src="renderer.js"></script>
+</body>
+</html>
