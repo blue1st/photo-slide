@@ -104,7 +104,7 @@ body, html {
   font-size: 12px;
   border: 1px solid #555;
   display: flex;
-  align- uma-align: center;
+  align-items: center;
   gap: 4px;
 }
 
@@ -205,6 +205,52 @@ body, html {
   position: relative;
   overflow: auto;
   background: #000;
+}
+
+#welcome-view {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  color: #555;
+}
+
+.welcome-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.welcome-icon {
+  margin-bottom: 8px;
+}
+
+.welcome-icon-img {
+  width: 128px;
+  height: 128px;
+  object-fit: contain;
+  filter: drop-shadow(0 10px 20px rgba(0,0,0,0.4));
+  opacity: 0.6;
+  border-radius: 28px;
+  animation: welcomeFloat 4s ease-in-out infinite;
+}
+
+@keyframes welcomeFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.welcome-content h2 {
+  margin: 0;
+  font-weight: 400;
+  color: #888;
+}
+
+.welcome-content p {
+  margin: 0;
+  font-size: 14px;
+  color: #666;
 }
 
 #main-image {

@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog, clipboard } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { exec } = require('child_process');
@@ -21,10 +21,13 @@ async function fetchTagsFromFile(filePath) {
   }
 }
 
+let mainWindow;
+
 function createWindow() {
-  const win = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
+    icon: path.join(__dirname, 'icon.png'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false,
@@ -32,7 +35,7 @@ function createWindow() {
     },
   });
 
-  win.loadFile('index.html');
+  mainWindow.loadFile('index.html');
 }
 
 app.whenReady().then(() => {
@@ -100,24 +103,5 @@ ipcMain.handle('rename-file', async (event, { oldPath, newName }) => {
     return { success: true, newPath };
   } catch (error) {
     return { success: false, error: error.message };
-  }
-});
-
-// フルパスコピー
-ipcMain.handle('copy-path', async (event, filePath) => {
-  clipboard.writeText(filePath);
-  return true;
-});
-
-// ファイル自体のコピー (macOS)
-ipcMain.handle('copy-file', async (event, filePath) => {
-  try {
-    // AppleScriptを使用してFinderのクリップボードにファイルをセット
-    const script = `set theFile to POSIX file "${filePath}" as alias\nset the clipboard to theFile`;
-    await execPromise(`osascript -e '${script}'`);
-    return true;
-  } catch (error) {
-    console.error(error);
-    return false;
   }
 });

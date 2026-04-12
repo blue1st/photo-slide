@@ -10,14 +10,12 @@
     <header id="top-bar">
       <div class="toolbar-row">
         <div class="toolbar-left">
-          <button id="btn-open">フォルダを開く</button>
+          <button id="btn-open" title="画像フォルダを選択して開きます">フォルダを開く</button>
           <div class="file-info-group">
             <span id="file-name">ファイルを選択してください</span>
           </div>
           <div class="file-actions">
-            <button id="btn-rename-trigger" title="名前変更">✎</button>
-            <button id="btn-copy-path" title="パスコピー">🔗</button>
-            <button id="btn-copy-img" title="画像コピー">🖼️</button>
+            <button id="btn-rename-trigger" title="ファイル名を変更する">✎</button>
           </div>
           <span id="display-mode-label">モード: 収まる</span>
         </div>
@@ -26,6 +24,7 @@
             <div id="current-tags-container"></div>
             <div class="add-tag-group">
               <input type="text" id="input-single-tag" list="tag-suggestions" placeholder="タグを入力してEnter">
+              <button id="btn-add-tag" title="新しいタグを追加する">+</button>
               <datalist id="tag-suggestions"></datalist>
             </div>
           </div>
@@ -35,7 +34,7 @@
       <div class="filter-row">
         <span class="label">タグ絞り込み:</span>
         <div id="all-tags-list"></div>
-        <button id="btn-clear-filter">クリア</button>
+        <button id="btn-clear-filter" title="タグ絞り込みをリセットする">クリア</button>
       </div>
     </header>
 
@@ -44,17 +43,26 @@
         <h3>ファイル名の変更</h3>
         <input type="text" id="input-new-name">
         <div class="modal-buttons">
-          <button id="btn-rename-cancel">キャンセル</button>
-          <button id="btn-rename-confirm">適用</button>
+          <button id="btn-rename-cancel" title="変更を破棄して閉じる">キャンセル</button>
+          <button id="btn-rename-confirm" title="新しいファイル名を保存する">適用</button>
         </div>
       </div>
     </div>
 
     <main id="viewer">
-      <img id="main-image" src="" alt="Photo">
-      <div id="controls">
-        <button id="btn-prev">◀</button>
-        <button id="btn-next">▶</button>
+      <div id="welcome-view">
+        <div class="welcome-content">
+          <div class="welcome-icon">
+            <img src="icon.png" alt="App Icon" class="welcome-icon-img">
+          </div>
+          <h2>ようこそ</h2>
+          <p>「フォルダを開く」ボタンから画像フォルダを選択してください</p>
+        </div>
+      </div>
+      <img id="main-image" src="" alt="Photo" style="display: none;">
+      <div id="controls" class="hidden">
+        <button id="btn-prev" title="前の画像へ (ArrowLeft / a)">◀</button>
+        <button id="btn-next" title="次の画像へ (ArrowRight / d)">▶</button>
       </div>
     </main>
   </div>

@@ -11,11 +11,10 @@ const btnClearFilter = document.getElementById('btn-clear-filter');
 const displayModeLabel = document.getElementById('display-mode-label');
 const currentTagsContainer = document.getElementById('current-tags-container');
 const controls = document.getElementById('controls');
+const welcomeView = document.getElementById('welcome-view');
 
 // ファイル操作系
 const btnRenameTrigger = document.getElementById('btn-rename-trigger');
-const btnCopyPath = document.getElementById('btn-copy-path');
-const btnCopyImg = document.getElementById('btn-copy-img');
 const renameModal = document.getElementById('rename-modal');
 const inputNewName = document.getElementById('input-new-name');
 const btnRenameConfirm = document.getElementById('btn-rename-confirm');
@@ -41,8 +40,16 @@ let currentModeIndex = 0;
 let hideTimeout;
 
 async function updateImage() {
-  if (filteredImages.length === 0) return;
-  
+  if (filteredImages.length === 0) {
+    welcomeView.style.display = 'flex';
+    imgElement.style.display = 'none';
+    fileNameDisplay.innerText = 'ファイルを選択してください';
+    return;
+  }
+
+  welcomeView.style.display = 'none';
+  imgElement.style.display = 'block';
+
   const imagePath = filteredImages[currentIndex];
   if (!imagePath) return;
 
@@ -68,11 +75,13 @@ function renderCurrentImageTags() {
 
 async function addTag() {
   const tag = inputSingleTag.value.trim();
-  if (tag && !currentImageTags.includes(tag)) {
-    currentImageTags.push(tag);
-    renderCurrentImageTags();
+  if (tag) {
+    if (!currentImageTags.includes(tag)) {
+      currentImageTags.push(tag);
+      renderCurrentImageTags();
+      await saveCurrentTags();
+    }
     inputSingleTag.value = '';
-    await saveCurrentTags();
   }
 }
 
@@ -230,33 +239,19 @@ async function handleRename() {
     // 更新した画像を表示
     currentIndex = filteredImages.indexOf(newPath);
     updateImage();
+    renameModal.style.display = 'none';
   } else {
     alert('エラー: ' + result.error);
   }
 }
 
-async function handleCopyPath() {
-  const imagePath = filteredImages[currentIndex];
-  if (imagePath) {
-    await window.electronAPI.copyPath(imagePath);
-    alert('フルパスをコピーしました');
-  }
-}
-
-async function handleCopyFile() {
-  const imagePath = filteredImages[currentIndex];
-  if (imagePath) {
-    await window.electronAPI.copyFile(imagePath);
-    alert('ファイルをコピーしました');
-  }
-}
-
+// イベント登録
 btnOpen.addEventListener('click', openFolder);
 btnPrev.addEventListener('click', prevImage);
 btnNext.addEventListener('click', nextImage);
 btnAddTag.addEventListener('click', addTag);
 inputSingleTag.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') addTag();
+  if (e.key === 'Enter' && !e.isComposing) addTag();
 });
 btnClearFilter.addEventListener('click', () => {
   includeTags.clear();
@@ -269,6 +264,11 @@ btnClearFilter.addEventListener('click', () => {
 btnRenameTrigger.addEventListener('click', () => {
   renameModal.style.display = 'flex';
   inputNewName.value = '';
+  inputNewName.focus();
+});
+
+inputNewName.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.isComposing) handleRename();
 });
 
 btnRenameCancel.addEventListener('click', () => {
@@ -276,9 +276,6 @@ btnRenameCancel.addEventListener('click', () => {
 });
 
 btnRenameConfirm.addEventListener('click', handleRename);
-
-btnCopyPath.addEventListener('click', handleCopyPath);
-btnCopyImg.addEventListener('click', handleCopyFile);
 
 window.addEventListener('keydown', (e) => {
   if (document.activeElement === inputSingleTag || document.activeElement === inputNewName) return;
@@ -293,6 +290,8 @@ window.addEventListener('keydown', (e) => {
     resetHideTimeout();
   } else if (e.key === 'ArrowDown' || key === 's') {
     currentModeIndex = (currentModeIndex - 1 + MODES.length) % MODES.length;
+    updateDisplayMode();
+    resetHideTimeout();
   } else {
     resetHideTimeout();
   }
