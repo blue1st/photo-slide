@@ -61,3 +61,18 @@ npm start
 ## ライセンス
 
 ISC License
+
+## トラブルシューティング
+
+### 「壊れているため開けません」と表示される場合 (macOS)
+
+GitHub Releases からダウンロードした `.app` や `.dmg` を開く際に、「“PhotoSlide”は壊れているため開けません。ゴミ箱に入れる必要があります。」という警告が出ることがあります。これは、macOS の Gatekeeper が未署名のアプリケーションをブロックする仕様によるものです。
+
+**解決方法:**
+
+1. ダウンロードした `PhotoSlide.app` を「アプリケーション」フォルダ (`/Applications`) に配置します。
+2. ターミナルを開き、以下のコマンドを実行して隔離属性 (Quarantine) を解除します。
+   ```bash
+   xattr -cr "/Applications/PhotoSlide.app"
+   ```
+3. その後、通常通りダブルクリックで起動できるようになります。
