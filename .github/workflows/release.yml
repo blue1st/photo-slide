@@ -32,9 +32,32 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
+        id: create_release
         with:
           files: |
             dist/*.dmg
             dist/*.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Calculate SHA256
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          SHA256=$(shasum -a 256 dist/*.dmg | awk '{print $1}')
+          echo "SHA256=$SHA256" >> $GITHUB_ENV
+          echo "Calculated SHA256: $SHA256"
+
+      # Note: To automate the Cask update, you'll need to create a Personal Access Token (PAT)
+      # with 'repo' scope and add it to your repository secrets as HOMEBREW_TAP_TOKEN.
+      - name: Update Homebrew Cask
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: mislav/bump-homebrew-formula-action@v3
+        with:
+          formula-name: photo-slide
+          formula-path: Casks/photo-slide.rb
+          homebrew-tap: blue1st/homebrew-taps
+          download-url: https://github.com/blue1st/photo-slide/releases/download/${{ github.ref_name }}/PhotoSlide-${{ github.ref_name }}.dmg
+          download-sha256: ${{ env.SHA256 }}
+          commit-message: "Update photo-slide to ${{ github.ref_name }}"
+        env:
+          COMMITTER_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}

@@ -31,6 +31,15 @@ Node.js がインストールされている必要があります。
 
 ### インストール
 
+#### Homebrew (macOS)
+Tap リポジトリを設定している場合、以下のコマンドでインストールできます：
+
+```bash
+brew install blue1st/tap/photo-slide
+```
+
+#### ソースからビルド
+
 ```bash
 npm install
 ```
