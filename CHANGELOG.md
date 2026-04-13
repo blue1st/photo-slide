@@ -1,5 +1,7 @@
 # Changelog
 
+## [1.1.1](https://github.com/blue1st/photo-slide/compare/v1.1.0...v1.1.1) (2026-04-13)
+
 # [1.1.0](https://github.com/blue1st/photo-slide/compare/v0.1.0...v1.1.0) (2026-04-13)
 
 
