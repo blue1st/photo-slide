@@ -32,10 +32,18 @@ Node.js がインストールされている必要があります。
 ### インストール
 
 #### Homebrew (macOS)
-Tap リポジトリを設定している場合、以下のコマンドでインストールできます：
+
+[blue1st/homebrew-taps](https://github.com/blue1st/homebrew-taps) を利用して、以下のコマンドでインストールできます：
 
 ```bash
-brew install blue1st/tap/photo-slide
+brew install --cask blue1st/taps/photo-slide
+```
+
+一度 tap している場合は、以下のようにも実行できます：
+
+```bash
+brew tap blue1st/taps
+brew install --cask photo-slide
 ```
 
 #### ソースからビルド
