@@ -197,6 +197,23 @@ body, html {
   color: #ccc;
 }
 
+#btn-untagged-filter {
+  background: #333;
+  color: #ccc;
+  border: 1px solid #444;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+#btn-untagged-filter.active {
+  background: #ff9500;
+  color: white;
+  border-color: #e68600;
+}
+
 #viewer {
   flex: 1;
   display: flex;
@@ -374,8 +391,9 @@ button {
 button:hover {
   background: #444;
 }
-/* ラベル付けオーバーレイ */
-#labeling-overlay {
+/* ラベル付けオーバーレイ共通 */
+#labeling-overlay,
+#bulk-labeling-overlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -390,10 +408,10 @@ button:hover {
   transition: opacity 0.3s ease, visibility 0.3s ease;
 }
 
-#labeling-overlay.overlay-hidden {
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
+.overlay-hidden {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
 }
 
 .overlay-inner {
@@ -603,4 +621,219 @@ button:hover {
   background: #333;
   border: 1px solid #555;
   font-size: 16px;
+}
+
+/* グリッドビュー */
+#grid-view {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  grid-auto-rows: 200px;
+  gap: 15px;
+  padding: 20px;
+  overflow-y: auto;
+  align-content: start;
+}
+
+#grid-view.hidden {
+  display: none;
+}
+
+.grid-item {
+  position: relative;
+  background: #1a1a1a;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 2px solid transparent;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.grid-item:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.grid-item.selected {
+  border-color: #007aff;
+  background: rgba(0, 122, 255, 0.1);
+}
+
+.grid-thumbnail {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.8;
+  transition: opacity 0.2s;
+}
+
+.grid-item:hover .grid-thumbnail,
+.grid-item.selected .grid-thumbnail {
+  opacity: 1;
+}
+
+.grid-checkbox-wrapper {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+}
+
+.grid-checkbox {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  accent-color: #007aff;
+}
+
+.grid-item-name {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(transparent, rgba(0,0,0,0.8));
+  color: white;
+  padding: 20px 10px 10px 10px;
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+}
+
+/* 一括ラベル付けオーバーレイ */
+.bulk-inner {
+  max-width: 800px;
+  height: auto;
+  max-height: 90%;
+}
+
+.bulk-content {
+  flex-direction: column;
+  gap: 30px;
+}
+
+.bulk-tags-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.bulk-tags-section h4 {
+  margin: 0;
+  font-size: 14px;
+  color: #aaa;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.tag-container-box {
+  min-height: 60px;
+  background: rgba(0,0,0,0.3);
+  border-radius: 8px;
+  padding: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  border: 1px solid rgba(255,255,255,0.05);
+}
+
+.bulk-input-group {
+  display: flex;
+}
+
+.bulk-input-group input {
+  flex: 1;
+  background: #111;
+  border: 1px solid #444;
+  color: white;
+  padding: 10px;
+  border-radius: 6px;
+}
+
+.primary-btn {
+  background: #007aff !important;
+  border-color: #005bbd !important;
+  color: white !important;
+  font-weight: bold;
+}
+
+.primary-btn:hover {
+  background: #0066d6 !important;
+}
+
+.bulk-tag-pill {
+  background: #222;
+  border: 1px solid #444;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.bulk-tag-pill.add {
+  border-color: #28a745;
+  background: rgba(40, 167, 69, 0.1);
+}
+
+.bulk-tag-pill.remove {
+  border-color: #dc3545;
+  background: rgba(220, 53, 69, 0.1);
+}
+
+.bulk-tag-pill .close {
+  cursor: pointer;
+  color: #888;
+}
+
+.bulk-tag-pill .close:hover {
+  color: #fff;
+}
+
+.bulk-file-ops {
+  display: flex;
+  gap: 12px;
+}
+
+.bulk-file-ops button {
+  flex: 1;
+  padding: 10px;
+  background: #333;
+  border: 1px solid #555;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.danger-btn {
+  background: rgba(255, 59, 48, 0.2) !important;
+  border-color: #ff3b30 !important;
+  color: #ff3b30 !important;
+}
+
+.danger-btn:hover {
+  background: #ff3b30 !important;
+  color: white !important;
+}
+
+.file-actions button {
+  font-size: 16px;
+  padding: 4px 8px;
+  background: #1a1a1a;
+  border: 1px solid #333;
+  transition: all 0.2s;
+}
+
+.file-actions button:hover {
+  background: #444;
+  border-color: #666;
+  transform: translateY(-1px);
+}
+
+#btn-delete-trigger:hover {
+  background: #ff3b30;
+  border-color: #ff3b30;
 }

@@ -15,7 +15,10 @@
             <span id="file-name">ファイルを選択してください</span>
           </div>
           <div class="file-actions">
-            <button id="btn-rename-trigger" title="ファイル名を変更する">✎</button>
+            <button id="btn-rename-trigger" title="名前変更">✎</button>
+            <button id="btn-copy-trigger" title="コピー">📄</button>
+            <button id="btn-move-trigger" title="移動">📦</button>
+            <button id="btn-delete-trigger" title="ゴミ箱へ">🗑</button>
           </div>
           <span id="display-mode-label">モード: 収まる</span>
         </div>
@@ -33,6 +36,7 @@
       
       <div class="filter-row">
         <span class="label">タグ絞り込み:</span>
+        <button id="btn-untagged-filter" title="タグのない画像のみを表示する">タグなしのみ</button>
         <div id="all-tags-list"></div>
         <button id="btn-clear-filter" title="タグ絞り込みをリセットする">クリア</button>
       </div>
@@ -60,6 +64,7 @@
         </div>
       </div>
       <img id="main-image" src="" alt="Photo" style="display: none;" draggable="false">
+      <div id="grid-view" class="hidden"></div>
       <div id="controls" class="hidden">
         <button id="btn-prev" title="前の画像へ (ArrowLeft / a)">◀</button>
         <button id="btn-next" title="次の画像へ (ArrowRight / d)">▶</button>
@@ -87,6 +92,43 @@
            <input type="text" id="overlay-new-tag-input" placeholder="新しいタグを追加...">
            <button id="btn-overlay-add-tag">追加</button>
            <button id="btn-close-overlay">閉じる (Space)</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="bulk-labeling-overlay" class="overlay-hidden">
+      <div class="overlay-inner bulk-inner">
+        <div class="overlay-header">
+          <h3>一括ラベル付け</h3>
+          <span id="bulk-selection-count" class="hint">0個のファイルが選択されています</span>
+        </div>
+        <div class="overlay-content bulk-content">
+          <div class="bulk-tags-section">
+            <h4>追加するタグ</h4>
+            <div id="bulk-add-tags-container" class="tag-container-box"></div>
+            <div class="bulk-input-group">
+              <input type="text" id="input-bulk-add-tag" list="tag-suggestions" placeholder="タグを入力してEnterで追加リストへ">
+            </div>
+          </div>
+          <div class="bulk-tags-section">
+            <h4>削除するタグ</h4>
+            <div id="bulk-remove-tags-container" class="tag-container-box"></div>
+            <div class="bulk-input-group">
+              <input type="text" id="input-bulk-remove-tag" list="tag-suggestions" placeholder="タグを入力してEnterで削除リストへ">
+            </div>
+            </div>
+          <div class="bulk-tags-section">
+            <h4>ファイル操作</h4>
+            <div class="bulk-file-ops">
+              <button id="btn-bulk-copy">選択中をコピー...</button>
+              <button id="btn-bulk-move">選択中を移動...</button>
+              <button id="btn-bulk-delete" class="danger-btn">選択中を削除...</button>
+            </div>
+          </div>
+        </div>
+        <div class="overlay-footer">
+           <button id="btn-bulk-apply" class="primary-btn">一括適用</button>
+           <button id="btn-bulk-cancel">キャンセル (Space)</button>
         </div>
       </div>
     </div>

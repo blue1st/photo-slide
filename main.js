@@ -105,3 +105,55 @@ ipcMain.handle('rename-file', async (event, { oldPath, newName }) => {
     return { success: false, error: error.message };
   }
 });
+
+// ファイル操作: コピー、移動、削除
+ipcMain.handle('select-directory', async () => {
+  const { canceled, filePaths } = await dialog.showOpenDialog({
+    properties: ['openDirectory', 'createDirectory'],
+    title: 'コピー・移動先のフォルダを選択'
+  });
+  if (canceled) return null;
+  return filePaths[0];
+});
+
+ipcMain.handle('copy-file', async (event, { src, destDir }) => {
+  try {
+    const fileName = path.basename(src);
+    const destPath = path.join(destDir, fileName);
+    fs.copyFileSync(src, destPath);
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('move-file', async (event, { src, destDir }) => {
+  try {
+    const fileName = path.basename(src);
+    const destPath = path.join(destDir, fileName);
+    fs.renameSync(src, destPath);
+    return { success: true, destPath };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('delete-file', async (event, src) => {
+  try {
+    fs.unlinkSync(src);
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('trash-file', async (event, src) => {
+  try {
+    const { shell } = require('electron');
+    await shell.trashItem(src);
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+

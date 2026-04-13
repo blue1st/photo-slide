@@ -12,9 +12,15 @@ const displayModeLabel = document.getElementById('display-mode-label');
 const currentTagsContainer = document.getElementById('current-tags-container');
 const controls = document.getElementById('controls');
 const welcomeView = document.getElementById('welcome-view');
+const tagEditor = document.getElementById('tag-editor');
+const fileInfoGroup = document.querySelector('.file-info-group');
+const fileActionsGroup = document.querySelector('.file-actions');
 
 // ファイル操作系
 const btnRenameTrigger = document.getElementById('btn-rename-trigger');
+const btnCopyTrigger = document.getElementById('btn-copy-trigger');
+const btnMoveTrigger = document.getElementById('btn-move-trigger');
+const btnDeleteTrigger = document.getElementById('btn-delete-trigger');
 const renameModal = document.getElementById('rename-modal');
 const inputNewName = document.getElementById('input-new-name');
 const btnRenameConfirm = document.getElementById('btn-rename-confirm');
@@ -30,6 +36,22 @@ const overlayNewTagInput = document.getElementById('overlay-new-tag-input');
 const btnOverlayAddTag = document.getElementById('btn-overlay-add-tag');
 const btnCloseOverlay = document.getElementById('btn-close-overlay');
 
+// 一括ラベル付けオーバーレイ系
+const bulkLabelingOverlay = document.getElementById('bulk-labeling-overlay');
+const bulkSelectionCount = document.getElementById('bulk-selection-count');
+const bulkAddTagsContainer = document.getElementById('bulk-add-tags-container');
+const bulkRemoveTagsContainer = document.getElementById('bulk-remove-tags-container');
+const inputBulkAddTag = document.getElementById('input-bulk-add-tag');
+const inputBulkRemoveTag = document.getElementById('input-bulk-remove-tag');
+const btnBulkApply = document.getElementById('btn-bulk-apply');
+const btnBulkCancel = document.getElementById('btn-bulk-cancel');
+const btnBulkCopy = document.getElementById('btn-bulk-copy');
+const btnBulkMove = document.getElementById('btn-bulk-move');
+const btnBulkDelete = document.getElementById('btn-bulk-delete');
+
+// グリッドビュー系
+const gridView = document.getElementById('grid-view');
+
 let images = [];
 let filteredImages = [];
 let imageTagsMap = {}; 
@@ -38,6 +60,11 @@ let includeTags = new Set();
 let excludeTags = new Set();
 let currentIndex = 0;
 let currentImageTags = [];
+let isGridView = false;
+let selectedImages = new Set();
+let bulkAddTags = new Set();
+let bulkRemoveTags = new Set();
+let isUntaggedOnlyFilter = false;
 
 const MODES = [
   { id: 'contain', label: '収まる', class: 'mode-contain' },
@@ -51,9 +78,24 @@ let hideTimeout;
 
 async function updateImage() {
   if (filteredImages.length === 0) {
-    welcomeView.style.display = 'flex';
+    if (images.length > 0) {
+      // フォルダは開いているが該当なしの場合
+      welcomeView.style.display = 'none';
+      fileNameDisplay.innerText = '該当する画像はありません';
+    } else {
+      // フォルダ自体開いていない場合
+      welcomeView.style.display = 'flex';
+      fileNameDisplay.innerText = 'ファイルを選択してください';
+    }
     imgElement.style.display = 'none';
-    fileNameDisplay.innerText = 'ファイルを選択してください';
+    gridView.classList.add('hidden');
+    currentImageTags = [];
+    renderCurrentImageTags();
+    return;
+  }
+
+  if (isGridView) {
+    renderGridView();
     return;
   }
 
@@ -68,6 +110,78 @@ async function updateImage() {
   
   currentImageTags = imageTagsMap[imagePath] || await window.electronAPI.getTags(imagePath);
   renderCurrentImageTags();
+}
+
+function toggleGridView() {
+  isGridView = !isGridView;
+  if (isGridView) {
+    imgElement.style.display = 'none';
+    controls.classList.add('hidden');
+    gridView.classList.remove('hidden');
+    tagEditor.style.display = 'none';
+    fileInfoGroup.style.display = 'none';
+    fileActionsGroup.style.display = 'none';
+    displayModeLabel.style.display = 'none';
+    renderGridView();
+  } else {
+    gridView.classList.add('hidden');
+    imgElement.style.display = 'block';
+    tagEditor.style.display = 'flex';
+    fileInfoGroup.style.display = 'flex';
+    fileActionsGroup.style.display = 'flex';
+    displayModeLabel.style.display = 'block';
+    updateImage();
+  }
+}
+
+function renderGridView() {
+  gridView.innerHTML = '';
+  filteredImages.forEach((imagePath, index) => {
+    const item = document.createElement('div');
+    item.className = 'grid-item' + (selectedImages.has(imagePath) ? ' selected' : '');
+    if (index === currentIndex) item.style.boxShadow = '0 0 0 2px #fff';
+
+    const img = document.createElement('img');
+    img.src = `file://${imagePath}`;
+    img.className = 'grid-thumbnail';
+    img.loading = 'lazy';
+
+    const checkboxWrapper = document.createElement('div');
+    checkboxWrapper.className = 'grid-checkbox-wrapper';
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.className = 'grid-checkbox';
+    checkbox.checked = selectedImages.has(imagePath);
+    checkbox.onclick = (e) => {
+      e.stopPropagation();
+      toggleImageSelection(imagePath);
+    };
+    checkboxWrapper.appendChild(checkbox);
+
+    const name = document.createElement('div');
+    name.className = 'grid-item-name';
+    name.innerText = imagePath.split('/').pop();
+
+    item.appendChild(img);
+    item.appendChild(checkboxWrapper);
+    item.appendChild(name);
+
+    item.onclick = () => {
+      currentIndex = index;
+      toggleImageSelection(imagePath);
+    };
+
+    gridView.appendChild(item);
+  });
+}
+
+function toggleImageSelection(imagePath) {
+  if (selectedImages.has(imagePath)) {
+    selectedImages.delete(imagePath);
+  } else {
+    selectedImages.add(imagePath);
+  }
+  renderGridView();
 }
 
 function renderCurrentImageTags() {
@@ -198,20 +312,33 @@ function renderSuggestions() {
 }
 
 function applyFilter() {
-  if (includeTags.size === 0 && excludeTags.size === 0) {
+  if (includeTags.size === 0 && excludeTags.size === 0 && !isUntaggedOnlyFilter) {
     filteredImages = [...images];
   } else {
     filteredImages = images.filter(path => {
       const tags = imageTagsMap[path] || [];
+      
+      if (isUntaggedOnlyFilter && tags.length > 0) return false;
+
       const isExcluded = Array.from(excludeTags).some(tag => tags.includes(tag));
       if (isExcluded) return false;
+      
       const hasAllIncludes = Array.from(includeTags).every(tag => tags.includes(tag));
       if (!hasAllIncludes) return false;
+      
       return true;
     });
   }
   currentIndex = 0;
   updateImage();
+
+  // ボタンの表示状態を更新
+  const btnUntagged = document.getElementById('btn-untagged-filter');
+  if (isUntaggedOnlyFilter) {
+    btnUntagged.classList.add('active');
+  } else {
+    btnUntagged.classList.remove('active');
+  }
 }
 
 function resetHideTimeout() {
@@ -325,6 +452,174 @@ async function addTagFromOverlay() {
   }
 }
 
+// 一括ラベル付け関連
+function toggleBulkLabelingOverlay() {
+  if (bulkLabelingOverlay.classList.contains('overlay-hidden')) {
+    if (selectedImages.size === 0) {
+      alert('ファイルが選択されていません。');
+      return;
+    }
+    bulkAddTags.clear();
+    bulkRemoveTags.clear();
+    bulkSelectionCount.innerText = `${selectedImages.size}個のファイルが選択されています`;
+    renderBulkTags();
+    bulkLabelingOverlay.classList.remove('overlay-hidden');
+    inputBulkAddTag.focus();
+  } else {
+    bulkLabelingOverlay.classList.add('overlay-hidden');
+  }
+}
+
+function renderBulkTags() {
+  bulkAddTagsContainer.innerHTML = '';
+  bulkAddTags.forEach(tag => {
+    const pill = document.createElement('span');
+    pill.className = 'bulk-tag-pill add';
+    pill.innerHTML = `${tag} <span class="close">×</span>`;
+    pill.querySelector('.close').onclick = () => {
+      bulkAddTags.delete(tag);
+      renderBulkTags();
+    };
+    bulkAddTagsContainer.appendChild(pill);
+  });
+
+  bulkRemoveTagsContainer.innerHTML = '';
+  bulkRemoveTags.forEach(tag => {
+    const pill = document.createElement('span');
+    pill.className = 'bulk-tag-pill remove';
+    pill.innerHTML = `${tag} <span class="close">×</span>`;
+    pill.querySelector('.close').onclick = () => {
+      bulkRemoveTags.delete(tag);
+      renderBulkTags();
+    };
+    bulkRemoveTagsContainer.appendChild(pill);
+  });
+}
+
+async function applyBulkTags() {
+  const paths = Array.from(selectedImages);
+  for (const path of paths) {
+    let tags = imageTagsMap[path] || await window.electronAPI.getTags(path);
+    
+    // 追加
+    bulkAddTags.forEach(tag => {
+      if (!tags.includes(tag)) tags.push(tag);
+    });
+    
+    // 削除
+    bulkRemoveTags.forEach(tag => {
+      tags = tags.filter(t => t !== tag);
+    });
+
+    await window.electronAPI.setTags({ filePath: path, tags: tags });
+    imageTagsMap[path] = tags;
+  }
+  
+  updateUniqueTags();
+  toggleBulkLabelingOverlay();
+  if (isGridView) renderGridView();
+  else updateImage();
+}
+
+// ファイル操作関連
+async function copySingleFile() {
+  const imagePath = filteredImages[currentIndex];
+  if (!imagePath) return;
+  const destDir = await window.electronAPI.selectDirectory();
+  if (!destDir) return;
+  const result = await window.electronAPI.copyFile({ src: imagePath, destDir });
+  if (result.success) {
+    alert('コピー完了しました');
+  } else {
+    alert('エラー: ' + result.error);
+  }
+}
+
+async function moveSingleFile() {
+  const imagePath = filteredImages[currentIndex];
+  if (!imagePath) return;
+  const destDir = await window.electronAPI.selectDirectory();
+  if (!destDir) return;
+  const result = await window.electronAPI.moveFile({ src: imagePath, destDir });
+  if (result.success) {
+    removeFromLists(imagePath);
+    updateImage();
+  } else {
+    alert('エラー: ' + result.error);
+  }
+}
+
+async function deleteSingleFile() {
+  const imagePath = filteredImages[currentIndex];
+  if (!imagePath) return;
+  if (!confirm('ファイルをゴミ箱に移動しますか？')) return;
+  const result = await window.electronAPI.trashFile(imagePath);
+  if (result.success) {
+    removeFromLists(imagePath);
+    updateImage();
+  } else {
+    alert('エラー: ' + result.error);
+  }
+}
+
+async function copyBulkFiles() {
+  if (selectedImages.size === 0) return;
+  const destDir = await window.electronAPI.selectDirectory();
+  if (!destDir) return;
+  let count = 0;
+  for (const path of selectedImages) {
+    const res = await window.electronAPI.copyFile({ src: path, destDir });
+    if (res.success) count++;
+  }
+  alert(`${count}個のファイルをコピーしました`);
+}
+
+async function moveBulkFiles() {
+  if (selectedImages.size === 0) return;
+  const destDir = await window.electronAPI.selectDirectory();
+  if (!destDir) return;
+  let count = 0;
+  for (const path of selectedImages) {
+    const res = await window.electronAPI.moveFile({ src: path, destDir });
+    if (res.success) {
+      removeFromLists(path);
+      count++;
+    }
+  }
+  selectedImages.clear();
+  toggleBulkLabelingOverlay();
+  if (isGridView) renderGridView();
+  else updateImage();
+  alert(`${count}個のファイルを移動しました`);
+}
+
+async function deleteBulkFiles() {
+  if (selectedImages.size === 0) return;
+  if (!confirm(`${selectedImages.size}個のファイルをゴミ箱に移動しますか？`)) return;
+  let count = 0;
+  for (const path of selectedImages) {
+    const res = await window.electronAPI.trashFile(path);
+    if (res.success) {
+      removeFromLists(path);
+      count++;
+    }
+  }
+  selectedImages.clear();
+  toggleBulkLabelingOverlay();
+  if (isGridView) renderGridView();
+  else updateImage();
+  alert(`${count}個のファイルを削除しました`);
+}
+
+function removeFromLists(path) {
+  images = images.filter(p => p !== path);
+  filteredImages = filteredImages.filter(p => p !== path);
+  delete imageTagsMap[path];
+  if (currentIndex >= filteredImages.length && filteredImages.length > 0) {
+    currentIndex = filteredImages.length - 1;
+  }
+}
+
 // ドラッグ＆ドロップ
 dropTarget.addEventListener('dragover', (e) => {
   if (e.dataTransfer.types.includes('action-add')) {
@@ -386,10 +681,16 @@ inputSingleTag.addEventListener('keydown', (e) => {
 btnClearFilter.addEventListener('click', () => {
   includeTags.clear();
   excludeTags.clear();
+  isUntaggedOnlyFilter = false;
   applyFilter();
   renderFilterTags();
-}
-);
+});
+
+const btnUntaggedFilter = document.getElementById('btn-untagged-filter');
+btnUntaggedFilter.addEventListener('click', () => {
+  isUntaggedOnlyFilter = !isUntaggedOnlyFilter;
+  applyFilter();
+});
 
 btnRenameTrigger.addEventListener('click', () => {
   renameModal.style.display = 'flex';
@@ -413,18 +714,64 @@ overlayNewTagInput.addEventListener('keydown', (e) => {
 });
 btnCloseOverlay.addEventListener('click', toggleLabelingOverlay);
 
+// 一括ラベル用イベント
+inputBulkAddTag.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.isComposing) {
+    const tag = inputBulkAddTag.value.trim();
+    if (tag) {
+      bulkAddTags.add(tag);
+      inputBulkAddTag.value = '';
+      renderBulkTags();
+    }
+  }
+});
+inputBulkRemoveTag.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.isComposing) {
+    const tag = inputBulkRemoveTag.value.trim();
+    if (tag) {
+      bulkRemoveTags.add(tag);
+      inputBulkRemoveTag.value = '';
+      renderBulkTags();
+    }
+  }
+});
+btnBulkApply.addEventListener('click', applyBulkTags);
+btnBulkCancel.addEventListener('click', toggleBulkLabelingOverlay);
+btnBulkCopy.addEventListener('click', copyBulkFiles);
+btnBulkMove.addEventListener('click', moveBulkFiles);
+btnBulkDelete.addEventListener('click', deleteBulkFiles);
+
+btnCopyTrigger.addEventListener('click', copySingleFile);
+btnMoveTrigger.addEventListener('click', moveSingleFile);
+btnDeleteTrigger.addEventListener('click', deleteSingleFile);
+
 window.addEventListener('keydown', (e) => {
   if (document.activeElement === inputSingleTag || 
       document.activeElement === inputNewName || 
-      document.activeElement === overlayNewTagInput) return;
+      document.activeElement === overlayNewTagInput ||
+      document.activeElement === inputBulkAddTag ||
+      document.activeElement === inputBulkRemoveTag) return;
   const key = e.key.toLowerCase();
+  if (e.key === 'Tab') {
+    e.preventDefault();
+    toggleGridView();
+    return;
+  }
   if (e.key === ' ' || e.key === 'Spacebar') {
     e.preventDefault();
-    toggleLabelingOverlay();
+    if (isGridView) {
+      toggleBulkLabelingOverlay();
+    } else {
+      toggleLabelingOverlay();
+    }
     return;
   }
   if (!labelingOverlay.classList.contains('overlay-hidden')) {
     if (e.key === 'Escape') toggleLabelingOverlay();
+    return;
+  }
+  if (!bulkLabelingOverlay.classList.contains('overlay-hidden')) {
+    if (e.key === 'Escape') toggleBulkLabelingOverlay();
     return;
   }
   if (e.key === 'ArrowRight' || key === 'd') {
