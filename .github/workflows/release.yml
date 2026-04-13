@@ -40,28 +40,48 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Calculate SHA256
-        if: startsWith(github.ref, 'refs/tags/')
-        run: |
-          SHA256=$(shasum -a 256 dist/*.dmg | awk '{print $1}')
-          echo "SHA256=$SHA256" >> $GITHUB_ENV
-          echo "Calculated SHA256: $SHA256"
-
-      # Note: To automate the Cask update, you'll need to create a Personal Access Token (PAT)
-      # with 'repo' scope and add it to your repository secrets as HOMEBREW_TAP_TOKEN.
-      - name: Get version from tag
-        id: get_version
-        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
-
       - name: Update Homebrew Cask
         if: startsWith(github.ref, 'refs/tags/')
-        uses: mislav/bump-homebrew-formula-action@v3
-        with:
-          formula-name: photo-slide
-          formula-path: Casks/photo-slide.rb
-          homebrew-tap: blue1st/homebrew-taps
-          download-url: https://github.com/blue1st/photo-slide/releases/download/${{ github.ref_name }}/PhotoSlide-${{ steps.get_version.outputs.VERSION }}.dmg
-          download-sha256: ${{ env.SHA256 }}
-          commit-message: "Update photo-slide to ${{ github.ref_name }}"
-        env:
-          COMMITTER_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          
+          # Calculate SHA256 from local artifacts
+          SHA256_ARM=$(shasum -a 256 dist/PhotoSlide-${VERSION}-arm64.dmg | awk '{print $1}')
+          SHA256_X64=$(shasum -a 256 dist/PhotoSlide-${VERSION}-x64.dmg | awk '{print $1}')
+          
+          # Clone tap repository
+          git clone https://x-access-token:${{ secrets.HOMEBREW_TAP_TOKEN }}@github.com/blue1st/homebrew-taps.git homebrew-taps
+          
+          CASK_FILE="homebrew-taps/Casks/photo-slide.rb"
+          mkdir -p homebrew-taps/Casks
+          
+          cat <<EOF > $CASK_FILE
+          cask "photo-slide" do
+            arch arm: "arm64", intel: "x64"
+
+            version "$VERSION"
+            sha256 arm:   "$SHA256_ARM",
+                   intel: "$SHA256_X64"
+
+            url "https://github.com/${{ github.repository }}/releases/download/v#{version}/PhotoSlide-#{version}-#{arch}.dmg"
+            name "PhotoSlide"
+            desc "Simple photo slideshow application"
+            homepage "https://github.com/${{ github.repository }}"
+
+            app "PhotoSlide.app"
+
+            zap trash: [
+              "~/Library/Application Support/photo-slide",
+              "~/Library/Preferences/com.kawasaki.photo-slide.plist",
+              "~/Library/Saved Application State/com.kawasaki.photo-slide.savedState",
+            ]
+          end
+          EOF
+          
+          # Commit and Push
+          cd homebrew-taps
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Casks/photo-slide.rb
+          git commit -m "Update photo-slide to ${VERSION}" || exit 0
+          git push
