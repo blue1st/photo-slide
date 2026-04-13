@@ -84,7 +84,7 @@ ipcMain.handle('open-directory', async () => {
 ipcMain.handle('read-images', async (event, dirPath) => {
   const files = fs.readdirSync(dirPath);
   return files
-    .filter(file => /\.(jpg|jpeg|png|gif|webp|jftf)$/i.test(file))
+    .filter(file => /\.(jpg|jpeg|png|gif|webp|jfif|avif|bmp|svg|ico|pjpeg|pjp)$/i.test(file))
     .map(file => path.join(dirPath, file));
 });
 
