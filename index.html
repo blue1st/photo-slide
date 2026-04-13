@@ -59,12 +59,37 @@
           <p>「フォルダを開く」ボタンから画像フォルダを選択してください</p>
         </div>
       </div>
-      <img id="main-image" src="" alt="Photo" style="display: none;">
+      <img id="main-image" src="" alt="Photo" style="display: none;" draggable="false">
       <div id="controls" class="hidden">
         <button id="btn-prev" title="前の画像へ (ArrowLeft / a)">◀</button>
         <button id="btn-next" title="次の画像へ (ArrowRight / d)">▶</button>
       </div>
     </main>
+
+    <div id="labeling-overlay" class="overlay-hidden">
+      <div class="overlay-inner">
+        <div class="overlay-header">
+          <h3>ラベル付け</h3>
+          <span class="hint">タグをドラッグして画像にドロップしてください</span>
+        </div>
+        <div class="overlay-content">
+          <div id="tag-palette" class="tag-palette">
+            <!-- Tags will be rendered here -->
+          </div>
+          <div id="drop-target" class="drop-target">
+            <div id="image-preview-container">
+               <img id="overlay-img" src="" alt="Overlay Preview" draggable="false">
+               <div id="overlay-tags-display"></div>
+            </div>
+          </div>
+        </div>
+        <div class="overlay-footer">
+           <input type="text" id="overlay-new-tag-input" placeholder="新しいタグを追加...">
+           <button id="btn-overlay-add-tag">追加</button>
+           <button id="btn-close-overlay">閉じる (Space)</button>
+        </div>
+      </div>
+    </div>
   </div>
   <script src="renderer.js"></script>
 </body>

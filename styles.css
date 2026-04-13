@@ -374,3 +374,233 @@ button {
 button:hover {
   background: #444;
 }
+/* ラベル付けオーバーレイ */
+#labeling-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 2000;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(8px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+#labeling-overlay.overlay-hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.overlay-inner {
+  background: rgba(40, 40, 40, 0.85);
+  width: 90%;
+  height: 90%;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.overlay-header {
+  padding: 20px 30px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.overlay-header h3 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 300;
+}
+
+.overlay-header .hint {
+  font-size: 14px;
+  color: #888;
+}
+
+.overlay-content {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  padding: 20px;
+  gap: 20px;
+}
+
+.tag-palette {
+  width: 250px;
+  background: rgba(20, 20, 20, 0.5);
+  border-radius: 12px;
+  padding: 15px;
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: 10px;
+  overflow-y: auto;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  position: relative;
+}
+
+.palette-tag {
+  background: rgba(255, 255, 255, 0.05);
+  color: #eee;
+  padding: 8px 18px;
+  border-radius: 50px;
+  font-size: 14px;
+  cursor: grab;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.palette-tag:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateY(-2px) scale(1.05);
+  border-color: rgba(255, 255, 255, 0.3);
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+
+.palette-tag::before {
+  content: '⠿';
+  font-size: 10px;
+  color: #666;
+}
+
+.palette-tag:active {
+  cursor: grabbing;
+}
+
+.drop-target {
+  flex: 1;
+  background: radial-gradient(circle at center, #111 0%, #000 100%);
+  border-radius: 16px;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: 2px dashed rgba(255, 255, 255, 0.1);
+  transition: all 0.4s ease;
+  overflow: hidden;
+}
+
+.drop-target.drag-over {
+  border-color: #007aff;
+  background: rgba(0, 122, 255, 0.1);
+  transform: scale(1.01);
+  box-shadow: inset 0 0 40px rgba(0, 122, 255, 0.2);
+}
+
+#image-preview-container {
+  max-width: 100%;
+  max-height: 100%;
+  position: relative;
+}
+
+#overlay-img {
+  max-width: 100%;
+  max-height: 100%;
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+}
+
+#overlay-tags-display {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  pointer-events: auto;
+  z-index: 100;
+}
+
+.overlay-tags-pill {
+  z-index: 101;
+  background: rgba(0, 122, 255, 0.8);
+  color: white;
+  padding: 4px 12px;
+  border-radius: 50px;
+  font-size: 13px;
+  backdrop-filter: blur(4px);
+  animation: fadeIn 0.3s ease;
+  cursor: grab;
+  user-select: none;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+
+.overlay-tags-pill:active {
+  cursor: grabbing;
+}
+
+.tag-palette.trash-zone {
+  border-color: #ff3b30;
+  background: rgba(255, 59, 48, 0.1);
+  box-shadow: inset 0 0 20px rgba(255, 59, 48, 0.2);
+}
+
+.tag-palette.trash-zone::after {
+  content: '🗑 削除エリアにドロップ';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #ff3b30;
+  font-weight: bold;
+  pointer-events: none;
+  font-size: 14px;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.overlay-footer {
+  padding: 20px 30px;
+  background: rgba(20, 20, 20, 0.4);
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+#overlay-new-tag-input {
+  background: #111;
+  border: 1px solid #444;
+  color: white;
+  padding: 10px 15px;
+  border-radius: 8px;
+  flex: 1;
+  font-size: 16px;
+}
+
+#btn-overlay-add-tag {
+  padding: 10px 20px;
+  background: #007aff;
+  border: none;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+#btn-overlay-add-tag:hover {
+  background: #0066d6;
+}
+
+#btn-close-overlay {
+  padding: 10px 20px;
+  background: #333;
+  border: 1px solid #555;
+  font-size: 16px;
+}

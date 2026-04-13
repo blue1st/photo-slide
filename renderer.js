@@ -20,6 +20,16 @@ const inputNewName = document.getElementById('input-new-name');
 const btnRenameConfirm = document.getElementById('btn-rename-confirm');
 const btnRenameCancel = document.getElementById('btn-rename-cancel');
 
+// ラベル付けオーバーレイ系
+const labelingOverlay = document.getElementById('labeling-overlay');
+const tagPalette = document.getElementById('tag-palette');
+const dropTarget = document.getElementById('drop-target');
+const overlayImg = document.getElementById('overlay-img');
+const overlayTagsDisplay = document.getElementById('overlay-tags-display');
+const overlayNewTagInput = document.getElementById('overlay-new-tag-input');
+const btnOverlayAddTag = document.getElementById('btn-overlay-add-tag');
+const btnCloseOverlay = document.getElementById('btn-close-overlay');
+
 let images = [];
 let filteredImages = [];
 let imageTagsMap = {}; 
@@ -146,6 +156,7 @@ function updateUniqueTags() {
   
   renderFilterTags();
   renderSuggestions();
+  if (typeof renderTagPalette === 'function') renderTagPalette();
 }
 
 function renderFilterTags() {
@@ -245,6 +256,125 @@ async function handleRename() {
   }
 }
 
+// ラベル付けオーバーレイ関連
+function toggleLabelingOverlay() {
+  if (labelingOverlay.classList.contains('overlay-hidden')) {
+    const imagePath = filteredImages[currentIndex];
+    if (!imagePath) return;
+
+    overlayImg.src = `file://${imagePath}`;
+    renderTagPalette();
+    renderOverlayTags();
+    labelingOverlay.classList.remove('overlay-hidden');
+    overlayNewTagInput.focus();
+  } else {
+    labelingOverlay.classList.add('overlay-hidden');
+  }
+}
+
+function renderTagPalette() {
+  tagPalette.innerHTML = '';
+  if (allUniqueTags.length === 0) {
+    tagPalette.innerHTML = '<div style="color: #555; font-size: 12px; width: 100%; text-align: center; margin-top: 20px;">まだタグがありません。下の入力欄から追加してください。</div>';
+    return;
+  }
+  allUniqueTags.forEach(tag => {
+    const el = document.createElement('div');
+    el.className = 'palette-tag';
+    el.innerText = tag;
+    el.draggable = true;
+    el.addEventListener('dragstart', (e) => {
+      e.dataTransfer.setData('tag', tag);
+      e.dataTransfer.setData('action-add', 'true');
+    });
+    tagPalette.appendChild(el);
+  });
+}
+
+function renderOverlayTags() {
+  overlayTagsDisplay.innerHTML = '';
+  currentImageTags.forEach(tag => {
+    const span = document.createElement('span');
+    span.className = 'overlay-tags-pill';
+    span.innerText = tag;
+    span.draggable = true;
+    span.addEventListener('dragstart', (e) => {
+      e.dataTransfer.setData('tag', tag);
+      e.dataTransfer.setData('action-remove', 'true');
+      // ドラッグ中であることを視覚的に示す
+      span.style.opacity = '0.5';
+    });
+    span.addEventListener('dragend', () => {
+      span.style.opacity = '1';
+    });
+    overlayTagsDisplay.appendChild(span);
+  });
+}
+
+async function addTagFromOverlay() {
+  const tag = overlayNewTagInput.value.trim();
+  if (tag) {
+    if (!currentImageTags.includes(tag)) {
+      currentImageTags.push(tag);
+      renderOverlayTags();
+      renderCurrentImageTags();
+      await saveCurrentTags();
+      renderTagPalette(); // paletteも更新される可能性がある（新規タグの場合）
+    }
+    overlayNewTagInput.value = '';
+  }
+}
+
+// ドラッグ＆ドロップ
+dropTarget.addEventListener('dragover', (e) => {
+  if (e.dataTransfer.types.includes('action-add')) {
+    e.preventDefault();
+    dropTarget.classList.add('drag-over');
+  }
+});
+
+dropTarget.addEventListener('dragleave', () => {
+  dropTarget.classList.remove('drag-over');
+});
+
+dropTarget.addEventListener('drop', async (e) => {
+  e.preventDefault();
+  dropTarget.classList.remove('drag-over');
+  const tag = e.dataTransfer.getData('tag');
+  
+  if (e.dataTransfer.types.includes('action-add') && tag && !currentImageTags.includes(tag)) {
+    currentImageTags.push(tag);
+    renderOverlayTags();
+    renderCurrentImageTags();
+    await saveCurrentTags();
+  }
+});
+
+// パレットを削除のドロップターゲットにする
+tagPalette.addEventListener('dragover', (e) => {
+  if (e.dataTransfer.types.includes('action-remove')) {
+    e.preventDefault();
+    tagPalette.classList.add('trash-zone');
+  }
+});
+
+tagPalette.addEventListener('dragleave', () => {
+  tagPalette.classList.remove('trash-zone');
+});
+
+tagPalette.addEventListener('drop', async (e) => {
+  e.preventDefault();
+  tagPalette.classList.remove('trash-zone');
+  const tag = e.dataTransfer.getData('tag');
+  
+  if (e.dataTransfer.types.includes('action-remove') && tag) {
+    currentImageTags = currentImageTags.filter(t => t !== tag);
+    renderOverlayTags();
+    renderCurrentImageTags();
+    await saveCurrentTags();
+  }
+});
+
 // イベント登録
 btnOpen.addEventListener('click', openFolder);
 btnPrev.addEventListener('click', prevImage);
@@ -277,9 +407,26 @@ btnRenameCancel.addEventListener('click', () => {
 
 btnRenameConfirm.addEventListener('click', handleRename);
 
+btnOverlayAddTag.addEventListener('click', addTagFromOverlay);
+overlayNewTagInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.isComposing) addTagFromOverlay();
+});
+btnCloseOverlay.addEventListener('click', toggleLabelingOverlay);
+
 window.addEventListener('keydown', (e) => {
-  if (document.activeElement === inputSingleTag || document.activeElement === inputNewName) return;
+  if (document.activeElement === inputSingleTag || 
+      document.activeElement === inputNewName || 
+      document.activeElement === overlayNewTagInput) return;
   const key = e.key.toLowerCase();
+  if (e.key === ' ' || e.key === 'Spacebar') {
+    e.preventDefault();
+    toggleLabelingOverlay();
+    return;
+  }
+  if (!labelingOverlay.classList.contains('overlay-hidden')) {
+    if (e.key === 'Escape') toggleLabelingOverlay();
+    return;
+  }
   if (e.key === 'ArrowRight' || key === 'd') {
     nextImage();
   } else if (e.key === 'ArrowLeft' || key === 'a') {
