@@ -1,5 +1,12 @@
 # Changelog
 
+# [1.3.0](https://github.com/blue1st/photo-slide/compare/v1.2.0...v1.3.0) (2026-04-18)
+
+
+### Features
+
+* add grid navigation support for arrow keys and auto-scroll to selected items ([ccfe6c7](https://github.com/blue1st/photo-slide/commit/ccfe6c746ccfaccc28ab1b017d700fd8dfc237e9))
+
 # [1.2.0](https://github.com/blue1st/photo-slide/compare/v1.1.2...v1.2.0) (2026-04-13)
 
 
