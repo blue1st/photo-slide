@@ -134,12 +134,30 @@ function toggleGridView() {
   }
 }
 
+function getGridColumns() {
+  const items = gridView.querySelectorAll('.grid-item');
+  if (items.length <= 1) return 0;
+  const firstRect = items[0].getBoundingClientRect();
+  for (let i = 1; i < items.length; i++) {
+    if (items[i].getBoundingClientRect().top > firstRect.top) {
+      return i;
+    }
+  }
+  return items.length;
+}
+
 function renderGridView() {
   gridView.innerHTML = '';
   filteredImages.forEach((imagePath, index) => {
     const item = document.createElement('div');
     item.className = 'grid-item' + (selectedImages.has(imagePath) ? ' selected' : '');
-    if (index === currentIndex) item.style.boxShadow = '0 0 0 2px #fff';
+    if (index === currentIndex) {
+      item.style.boxShadow = '0 0 0 2px #fff';
+      // スクロール位置を調整
+      setTimeout(() => {
+        item.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+      }, 0);
+    }
 
     const img = document.createElement('img');
     img.src = `file://${imagePath}`;
@@ -779,12 +797,28 @@ window.addEventListener('keydown', (e) => {
   } else if (e.key === 'ArrowLeft' || key === 'a') {
     prevImage();
   } else if (e.key === 'ArrowUp' || key === 'w') {
-    currentModeIndex = (currentModeIndex + 1) % MODES.length;
-    updateDisplayMode();
+    if (isGridView) {
+      const cols = getGridColumns();
+      if (cols > 0) {
+        currentIndex = Math.max(0, currentIndex - cols);
+        updateImage();
+      }
+    } else {
+      currentModeIndex = (currentModeIndex + 1) % MODES.length;
+      updateDisplayMode();
+    }
     resetHideTimeout();
   } else if (e.key === 'ArrowDown' || key === 's') {
-    currentModeIndex = (currentModeIndex - 1 + MODES.length) % MODES.length;
-    updateDisplayMode();
+    if (isGridView) {
+      const cols = getGridColumns();
+      if (cols > 0) {
+        currentIndex = Math.min(filteredImages.length - 1, currentIndex + cols);
+        updateImage();
+      }
+    } else {
+      currentModeIndex = (currentModeIndex - 1 + MODES.length) % MODES.length;
+      updateDisplayMode();
+    }
     resetHideTimeout();
   } else {
     resetHideTimeout();
