@@ -1,5 +1,12 @@
 # Changelog
 
+# [1.4.0](https://github.com/blue1st/photo-slide/compare/v1.3.0...v1.4.0) (2026-04-20)
+
+
+### Features
+
+* add folder history functionality with local storage persistence and UI popup ([c08f422](https://github.com/blue1st/photo-slide/commit/c08f422ddc0eb4ae561a3d021d4b382eedd2e1e7))
+
 # [1.3.0](https://github.com/blue1st/photo-slide/compare/v1.2.0...v1.3.0) (2026-04-18)
 
 
