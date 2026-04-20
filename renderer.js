@@ -1,5 +1,8 @@
 const imgElement = document.getElementById('main-image');
 const btnOpen = document.getElementById('btn-open');
+const btnHistoryToggle = document.getElementById('btn-history-toggle');
+const historyPopup = document.getElementById('history-popup');
+const historyItems = document.getElementById('history-items');
 const btnPrev = document.getElementById('btn-prev');
 const btnNext = document.getElementById('btn-next');
 const btnAddTag = document.getElementById('btn-add-tag');
@@ -73,6 +76,7 @@ const MODES = [
   { id: 'original', label: 'オリジナル', class: 'mode-original' },
 ];
 let currentModeIndex = 0;
+let folderHistory = JSON.parse(localStorage.getItem('folderHistory') || '[]');
 
 let hideTimeout;
 
@@ -268,8 +272,21 @@ async function prevImage() {
 async function openFolder() {
   const path = await window.electronAPI.openDirectory();
   if (!path) return;
-  
-  images = await window.electronAPI.readImages(path);
+  loadFolder(path);
+}
+
+async function loadFolder(path) {
+  try {
+    images = await window.electronAPI.readImages(path);
+    if (images.length === 0) {
+      // フォルダが存在しないか空の場合（Electron APIの実装に依存するが）
+      // ここでエラーチェックを強化できる
+    }
+  } catch (err) {
+    alert('フォルダを開けませんでした。削除されている可能性があります。');
+    return;
+  }
+
   imageTagsMap = await window.electronAPI.getAllTags(images);
   
   updateUniqueTags();
@@ -277,6 +294,60 @@ async function openFolder() {
   filteredImages = [...images];
   currentIndex = 0;
   updateImage();
+
+  saveToHistory(path);
+}
+
+function saveToHistory(path) {
+  folderHistory = folderHistory.filter(p => p !== path);
+  folderHistory.unshift(path);
+  if (folderHistory.length > 10) {
+    folderHistory.pop();
+  }
+  localStorage.setItem('folderHistory', JSON.stringify(folderHistory));
+  renderHistory();
+}
+
+function renderHistory() {
+  historyItems.innerHTML = '';
+  if (folderHistory.length === 0) {
+    historyItems.innerHTML = '<div style="padding: 10px; color: #666; font-size: 12px; text-align: center;">履歴はありません</div>';
+    return;
+  }
+
+  folderHistory.forEach(path => {
+    const item = document.createElement('div');
+    item.className = 'history-item';
+    
+    const folderName = path.split('/').pop() || path;
+    
+    item.innerHTML = `
+      <div class="path-info">
+        <span class="folder-name">${folderName}</span>
+        <span class="full-path">${path}</span>
+      </div>
+      <button class="btn-remove-item" title="履歴から削除">×</button>
+    `;
+    
+    item.onclick = () => {
+      loadFolder(path);
+      historyPopup.classList.add('hidden');
+    };
+    
+    const btnRemove = item.querySelector('.btn-remove-item');
+    btnRemove.onclick = (e) => {
+      e.stopPropagation();
+      removeHistoryItem(path);
+    };
+    
+    historyItems.appendChild(item);
+  });
+}
+
+function removeHistoryItem(path) {
+  folderHistory = folderHistory.filter(p => p !== path);
+  localStorage.setItem('folderHistory', JSON.stringify(folderHistory));
+  renderHistory();
 }
 
 function updateUniqueTags() {
@@ -690,6 +761,18 @@ tagPalette.addEventListener('drop', async (e) => {
 
 // イベント登録
 btnOpen.addEventListener('click', openFolder);
+btnHistoryToggle.addEventListener('click', (e) => {
+  e.stopPropagation();
+  historyPopup.classList.toggle('hidden');
+});
+
+// ポップアップの外側クリックで閉じる
+window.addEventListener('click', () => {
+  historyPopup.classList.add('hidden');
+});
+historyPopup.addEventListener('click', (e) => {
+  e.stopPropagation();
+});
 btnPrev.addEventListener('click', prevImage);
 btnNext.addEventListener('click', nextImage);
 btnAddTag.addEventListener('click', addTag);
@@ -828,3 +911,4 @@ window.addEventListener('keydown', (e) => {
 window.addEventListener('mousemove', resetHideTimeout);
 
 updateDisplayMode();
+renderHistory();

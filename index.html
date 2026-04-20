@@ -10,7 +10,15 @@
     <header id="top-bar">
       <div class="toolbar-row">
         <div class="toolbar-left">
-          <button id="btn-open" title="画像フォルダを選択して開きます">フォルダを開く</button>
+          <div class="open-group">
+            <button id="btn-open" title="画像フォルダを選択して開きます">フォルダを開く</button>
+            <div class="history-dropdown">
+              <button id="btn-history-toggle" title="最近開いたフォルダ">履歴 ▾</button>
+              <div id="history-popup" class="history-popup hidden">
+                <div id="history-items"></div>
+              </div>
+            </div>
+          </div>
           <div class="file-info-group">
             <span id="file-name">ファイルを選択してください</span>
           </div>
