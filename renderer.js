@@ -42,6 +42,7 @@ const btnCloseOverlay = document.getElementById('btn-close-overlay');
 // 一括ラベル付けオーバーレイ系
 const bulkLabelingOverlay = document.getElementById('bulk-labeling-overlay');
 const bulkSelectionCount = document.getElementById('bulk-selection-count');
+const bulkSelectedThumbnails = document.getElementById('bulk-selected-thumbnails');
 const bulkAddTagsContainer = document.getElementById('bulk-add-tags-container');
 const bulkRemoveTagsContainer = document.getElementById('bulk-remove-tags-container');
 const inputBulkAddTag = document.getElementById('input-bulk-add-tag');
@@ -54,6 +55,10 @@ const btnBulkDelete = document.getElementById('btn-bulk-delete');
 
 // グリッドビュー系
 const gridView = document.getElementById('grid-view');
+const selectionIndicator = document.getElementById('selection-indicator');
+const selectionCountText = document.getElementById('selection-count-text');
+const btnClearSelection = document.getElementById('btn-clear-selection');
+const btnOpenBulk = document.getElementById('btn-open-bulk');
 
 let images = [];
 let filteredImages = [];
@@ -248,6 +253,29 @@ function toggleImageSelection(imagePath, itemElement = null, checkboxElement = n
       checkboxElement.checked = selectedImages.has(imagePath);
     }
   }
+  updateSelectionIndicator();
+}
+
+function updateSelectionIndicator() {
+  if (selectedImages.size > 0) {
+    selectionCountText.innerText = `${selectedImages.size}個選択中`;
+    selectionIndicator.classList.remove('hidden');
+  } else {
+    selectionIndicator.classList.add('hidden');
+  }
+}
+
+function clearAllSelections() {
+  selectedImages.clear();
+  if (isGridView) {
+    const selectedItems = gridView.querySelectorAll('.grid-item.selected');
+    selectedItems.forEach(item => {
+      item.classList.remove('selected');
+      const cb = item.querySelector('.grid-checkbox');
+      if (cb) cb.checked = false;
+    });
+  }
+  updateSelectionIndicator();
 }
 
 function renderCurrentImageTags() {
@@ -596,11 +624,36 @@ function toggleBulkLabelingOverlay() {
     bulkRemoveTags.clear();
     bulkSelectionCount.innerText = `${selectedImages.size}個のファイルが選択されています`;
     renderBulkTags();
+    renderBulkThumbnails();
     bulkLabelingOverlay.classList.remove('overlay-hidden');
     inputBulkAddTag.focus();
   } else {
     bulkLabelingOverlay.classList.add('overlay-hidden');
   }
+}
+
+function renderBulkThumbnails() {
+  bulkSelectedThumbnails.innerHTML = '';
+  const maxThumbnails = 50;
+  let count = 0;
+  const fragment = document.createDocumentFragment();
+  
+  for (const imagePath of selectedImages) {
+    if (count >= maxThumbnails) {
+      const more = document.createElement('div');
+      more.className = 'bulk-thumbnail-more';
+      more.innerText = `+${selectedImages.size - maxThumbnails}`;
+      fragment.appendChild(more);
+      break;
+    }
+    const img = document.createElement('img');
+    img.src = `file://${imagePath}`;
+    img.className = 'bulk-thumbnail';
+    img.loading = 'lazy';
+    fragment.appendChild(img);
+    count++;
+  }
+  bulkSelectedThumbnails.appendChild(fragment);
 }
 
 function renderBulkTags() {
@@ -650,6 +703,7 @@ async function applyBulkTags() {
   
   updateUniqueTags();
   toggleBulkLabelingOverlay();
+  clearAllSelections();
   if (isGridView) renderGridView();
   else updateImage();
 }
@@ -719,7 +773,7 @@ async function moveBulkFiles() {
       count++;
     }
   }
-  selectedImages.clear();
+  clearAllSelections();
   toggleBulkLabelingOverlay();
   if (isGridView) renderGridView();
   else updateImage();
@@ -737,7 +791,7 @@ async function deleteBulkFiles() {
       count++;
     }
   }
-  selectedImages.clear();
+  clearAllSelections();
   toggleBulkLabelingOverlay();
   if (isGridView) renderGridView();
   else updateImage();
@@ -804,6 +858,8 @@ tagPalette.addEventListener('drop', async (e) => {
 });
 
 // イベント登録
+btnClearSelection.addEventListener('click', clearAllSelections);
+btnOpenBulk.addEventListener('click', toggleBulkLabelingOverlay);
 btnOpen.addEventListener('click', openFolder);
 btnHistoryToggle.addEventListener('click', (e) => {
   e.stopPropagation();

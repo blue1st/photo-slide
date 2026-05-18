@@ -77,6 +77,14 @@
         <button id="btn-prev" title="前の画像へ (ArrowLeft / a)">◀</button>
         <button id="btn-next" title="次の画像へ (ArrowRight / d)">▶</button>
       </div>
+      
+      <div id="selection-indicator" class="selection-indicator hidden">
+        <span id="selection-count-text">0個選択中</span>
+        <div class="selection-actions">
+          <button id="btn-open-bulk" class="primary-btn">一括編集</button>
+          <button id="btn-clear-selection" title="選択をすべて解除">解除 ✕</button>
+        </div>
+      </div>
     </main>
 
     <div id="labeling-overlay" class="overlay-hidden">
@@ -111,6 +119,10 @@
           <span id="bulk-selection-count" class="hint">0個のファイルが選択されています</span>
         </div>
         <div class="overlay-content bulk-content">
+          <div class="bulk-tags-section">
+            <h4>選択された画像</h4>
+            <div id="bulk-selected-thumbnails" class="bulk-thumbnails-container"></div>
+          </div>
           <div class="bulk-tags-section">
             <h4>追加するタグ</h4>
             <div id="bulk-add-tags-container" class="tag-container-box"></div>
