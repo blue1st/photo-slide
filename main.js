@@ -1,24 +1,65 @@
 const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const path = require('path');
 const fs = require('fs');
-const { exec } = require('child_process');
+const { exec, execFile } = require('child_process');
 const util = require('util');
 const execPromise = util.promisify(exec);
+const execFilePromise = util.promisify(execFile);
 
 const tagCache = new Map();
 
-async function fetchTagsFromFile(filePath) {
-  if (tagCache.has(filePath)) return tagCache.get(filePath);
-
-  try {
-    const { stdout } = await execPromise(`xattr -p com.apple.metadata:_kMDItemUserTags "${filePath}"`);
-    const tags = stdout.trim() ? stdout.trim().split(',') : [];
-    tagCache.set(filePath, tags);
-    return tags;
-  } catch (error) {
-    tagCache.set(filePath, []);
-    return [];
+async function fetchTagsFromFilesBatch(filePaths) {
+  const results = {};
+  const filesToFetch = [];
+  
+  for (const fp of filePaths) {
+    if (tagCache.has(fp)) {
+      results[fp] = tagCache.get(fp);
+    } else {
+      filesToFetch.push(fp);
+      results[fp] = []; // Default to empty array
+    }
   }
+
+  if (filesToFetch.length === 0) return results;
+
+  const chunkSize = 500;
+  for (let i = 0; i < filesToFetch.length; i += chunkSize) {
+    const chunk = filesToFetch.slice(i, i + chunkSize);
+    let stdout = '';
+    try {
+      const res = await execFilePromise('xattr', ['-p', 'com.apple.metadata:_kMDItemUserTags', ...chunk]);
+      stdout = res.stdout;
+    } catch (e) {
+      stdout = e.stdout || '';
+    }
+
+    if (stdout) {
+      const lines = stdout.trim().split('\n');
+      for (const line of lines) {
+        if (!line) continue;
+        if (chunk.length === 1) {
+          const tags = line.trim() ? line.trim().split(',') : [];
+          results[chunk[0]] = tags;
+        } else {
+          const colonIndex = line.indexOf(': ');
+          if (colonIndex !== -1) {
+            const filePath = line.substring(0, colonIndex);
+            const tagString = line.substring(colonIndex + 2);
+            if (results[filePath] !== undefined) {
+              results[filePath] = tagString.trim() ? tagString.trim().split(',') : [];
+            }
+          }
+        }
+      }
+    }
+    
+    for (const fp of chunk) {
+      tagCache.set(fp, results[fp]);
+    }
+  }
+
+  return results;
 }
 
 let mainWindow;
@@ -51,7 +92,8 @@ app.on('window-all-closed', () => {
 });
 
 ipcMain.handle('get-tags', async (event, filePath) => {
-  return await fetchTagsFromFile(filePath);
+  const res = await fetchTagsFromFilesBatch([filePath]);
+  return res[filePath];
 });
 
 ipcMain.handle('set-tags', async (event, { filePath, tags }) => {
@@ -66,11 +108,7 @@ ipcMain.handle('set-tags', async (event, { filePath, tags }) => {
 });
 
 ipcMain.handle('get-all-tags', async (event, { imagePaths }) => {
-  const results = {};
-  for (const filePath of imagePaths) {
-    results[filePath] = await fetchTagsFromFile(filePath);
-  }
-  return results;
+  return await fetchTagsFromFilesBatch(imagePaths);
 });
 
 ipcMain.handle('open-directory', async () => {
