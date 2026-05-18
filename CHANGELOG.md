@@ -1,5 +1,12 @@
 # Changelog
 
+# [1.6.0](https://github.com/blue1st/photo-slide/compare/v1.5.1...v1.6.0) (2026-05-18)
+
+
+### Features
+
+* implement selection indicator and thumbnail preview for bulk operations ([e9b2e1d](https://github.com/blue1st/photo-slide/commit/e9b2e1dfcdc6d7644df688c0d9a3a915ff50a4f1))
+
 ## [1.5.1](https://github.com/blue1st/photo-slide/compare/v1.5.0...v1.5.1) (2026-05-18)
 
 
