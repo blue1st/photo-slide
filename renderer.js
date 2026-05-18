@@ -152,15 +152,18 @@ function getGridColumns() {
 
 function renderGridView() {
   gridView.innerHTML = '';
+  const fragment = document.createDocumentFragment();
+  let currentItemEl = null;
+
   filteredImages.forEach((imagePath, index) => {
     const item = document.createElement('div');
     item.className = 'grid-item' + (selectedImages.has(imagePath) ? ' selected' : '');
+    item.dataset.path = imagePath;
+    
     if (index === currentIndex) {
       item.style.boxShadow = '0 0 0 2px #fff';
-      // スクロール位置を調整
-      setTimeout(() => {
-        item.scrollIntoView({ block: 'nearest', inline: 'nearest' });
-      }, 0);
+      item.classList.add('current-item');
+      currentItemEl = item;
     }
 
     const img = document.createElement('img');
@@ -176,7 +179,7 @@ function renderGridView() {
     checkbox.checked = selectedImages.has(imagePath);
     checkbox.onclick = (e) => {
       e.stopPropagation();
-      toggleImageSelection(imagePath);
+      toggleImageSelection(imagePath, item, checkbox);
     };
     checkboxWrapper.appendChild(checkbox);
 
@@ -189,21 +192,62 @@ function renderGridView() {
     item.appendChild(name);
 
     item.onclick = () => {
-      currentIndex = index;
-      toggleImageSelection(imagePath);
+      updateCurrentIndex(index, item);
+      toggleImageSelection(imagePath, item, checkbox);
     };
 
-    gridView.appendChild(item);
+    fragment.appendChild(item);
   });
+  
+  gridView.appendChild(fragment);
+
+  if (currentItemEl) {
+    setTimeout(() => {
+      currentItemEl.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    }, 0);
+  }
 }
 
-function toggleImageSelection(imagePath) {
+function updateCurrentIndex(newIndex, newItemElement) {
+  const oldItem = gridView.querySelector('.current-item');
+  if (oldItem) {
+    oldItem.style.boxShadow = '';
+    oldItem.classList.remove('current-item');
+  }
+  
+  currentIndex = newIndex;
+  
+  if (newItemElement) {
+    newItemElement.style.boxShadow = '0 0 0 2px #fff';
+    newItemElement.classList.add('current-item');
+  }
+}
+
+function toggleImageSelection(imagePath, itemElement = null, checkboxElement = null) {
   if (selectedImages.has(imagePath)) {
     selectedImages.delete(imagePath);
   } else {
     selectedImages.add(imagePath);
   }
-  renderGridView();
+  
+  if (!itemElement) {
+    itemElement = gridView.querySelector(`.grid-item[data-path="${CSS.escape(imagePath)}"]`);
+  }
+  
+  if (itemElement) {
+    if (selectedImages.has(imagePath)) {
+      itemElement.classList.add('selected');
+    } else {
+      itemElement.classList.remove('selected');
+    }
+    
+    if (!checkboxElement) {
+      checkboxElement = itemElement.querySelector('.grid-checkbox');
+    }
+    if (checkboxElement) {
+      checkboxElement.checked = selectedImages.has(imagePath);
+    }
+  }
 }
 
 function renderCurrentImageTags() {
