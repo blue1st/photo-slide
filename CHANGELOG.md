@@ -1,5 +1,12 @@
 # Changelog
 
+# [1.5.0](https://github.com/blue1st/photo-slide/compare/v1.4.0...v1.5.0) (2026-05-18)
+
+
+### Features
+
+* implement batch processing for fetching file tags using execFile to improve performance ([53f6f98](https://github.com/blue1st/photo-slide/commit/53f6f98a4c10fcd600f2bf72075d85fcee854595))
+
 # [1.4.0](https://github.com/blue1st/photo-slide/compare/v1.3.0...v1.4.0) (2026-04-20)
 
 
