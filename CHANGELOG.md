@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.1](https://github.com/blue1st/photo-slide/compare/v1.5.0...v1.5.1) (2026-05-18)
+
+
+### Performance Improvements
+
+* optimize grid view rendering and update items individually instead of re-rendering the whole list ([b5295e9](https://github.com/blue1st/photo-slide/commit/b5295e934847b692452b920d9a6c24d2114cd102))
+
 # [1.5.0](https://github.com/blue1st/photo-slide/compare/v1.4.0...v1.5.0) (2026-05-18)
 
 
