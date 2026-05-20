@@ -1,5 +1,12 @@
 # Changelog
 
+# [1.7.0](https://github.com/blue1st/photo-slide/compare/v1.6.0...v1.7.0) (2026-05-20)
+
+
+### Features
+
+* optimize grid view performance by toggling visibility instead of re-rendering on filter changes ([cec168b](https://github.com/blue1st/photo-slide/commit/cec168b852d00fbe8a5c90a33b58732ce5eabb74))
+
 # [1.6.0](https://github.com/blue1st/photo-slide/compare/v1.5.1...v1.6.0) (2026-05-18)
 
 
