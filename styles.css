@@ -762,6 +762,10 @@ button:hover {
   cursor: pointer;
 }
 
+.grid-item.hidden {
+  display: none !important;
+}
+
 .grid-item:hover {
   transform: translateY(-4px);
   box-shadow: 0 10px 20px rgba(0,0,0,0.4);

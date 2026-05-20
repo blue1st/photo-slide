@@ -85,7 +85,25 @@ let folderHistory = JSON.parse(localStorage.getItem('folderHistory') || '[]');
 
 let hideTimeout;
 
-async function updateImage() {
+function syncGridCurrentItem() {
+  const oldItem = gridView.querySelector('.current-item');
+  if (oldItem) {
+    oldItem.style.boxShadow = '';
+    oldItem.classList.remove('current-item');
+  }
+
+  const currentPath = filteredImages[currentIndex];
+  if (!currentPath) return;
+
+  const newItem = gridView.querySelector(`.grid-item[data-path="${CSS.escape(currentPath)}"]`);
+  if (newItem) {
+    newItem.style.boxShadow = '0 0 0 2px #fff';
+    newItem.classList.add('current-item');
+    newItem.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  }
+}
+
+async function updateImage(onlySelection = false) {
   if (filteredImages.length === 0) {
     if (images.length > 0) {
       // フォルダは開いているが該当なしの場合
@@ -104,7 +122,23 @@ async function updateImage() {
   }
 
   if (isGridView) {
-    renderGridView();
+    if (gridView.innerHTML === '') {
+      renderGridView();
+    } else {
+      if (!onlySelection) {
+        const filteredSet = new Set(filteredImages);
+        const items = gridView.querySelectorAll('.grid-item');
+        items.forEach(item => {
+          const path = item.dataset.path;
+          if (filteredSet.has(path)) {
+            item.classList.remove('hidden');
+          } else {
+            item.classList.add('hidden');
+          }
+        });
+      }
+      syncGridCurrentItem();
+    }
     return;
   }
 
@@ -131,7 +165,11 @@ function toggleGridView() {
     fileInfoGroup.style.display = 'none';
     fileActionsGroup.style.display = 'none';
     displayModeLabel.style.display = 'none';
-    renderGridView();
+    if (gridView.innerHTML === '') {
+      renderGridView();
+    } else {
+      updateImage();
+    }
   } else {
     gridView.classList.add('hidden');
     imgElement.style.display = 'block';
@@ -160,12 +198,18 @@ function renderGridView() {
   const fragment = document.createDocumentFragment();
   let currentItemEl = null;
 
-  filteredImages.forEach((imagePath, index) => {
+  const filteredSet = new Set(filteredImages);
+
+  images.forEach((imagePath) => {
+    const isFiltered = !filteredSet.has(imagePath);
     const item = document.createElement('div');
-    item.className = 'grid-item' + (selectedImages.has(imagePath) ? ' selected' : '');
+    item.className = 'grid-item' + 
+      (selectedImages.has(imagePath) ? ' selected' : '') + 
+      (isFiltered ? ' hidden' : '');
     item.dataset.path = imagePath;
     
-    if (index === currentIndex) {
+    const currentPath = filteredImages[currentIndex];
+    if (imagePath === currentPath) {
       item.style.boxShadow = '0 0 0 2px #fff';
       item.classList.add('current-item');
       currentItemEl = item;
@@ -197,8 +241,11 @@ function renderGridView() {
     item.appendChild(name);
 
     item.onclick = () => {
-      updateCurrentIndex(index, item);
-      toggleImageSelection(imagePath, item, checkbox);
+      const idx = filteredImages.indexOf(imagePath);
+      if (idx !== -1) {
+        updateCurrentIndex(idx, item);
+        toggleImageSelection(imagePath, item, checkbox);
+      }
     };
 
     fragment.appendChild(item);
@@ -330,14 +377,14 @@ function updateDisplayMode() {
 async function nextImage() {
   if (filteredImages.length === 0) return;
   currentIndex = (currentIndex + 1) % filteredImages.length;
-  updateImage();
+  updateImage(true);
   resetHideTimeout();
 }
 
 async function prevImage() {
   if (filteredImages.length === 0) return;
   currentIndex = (currentIndex - 1 + filteredImages.length) % filteredImages.length;
-  updateImage();
+  updateImage(true);
   resetHideTimeout();
 }
 
@@ -348,6 +395,7 @@ async function openFolder() {
 }
 
 async function loadFolder(path) {
+  gridView.innerHTML = '';
   try {
     images = await window.electronAPI.readImages(path);
     if (images.length === 0) {
@@ -704,8 +752,7 @@ async function applyBulkTags() {
   updateUniqueTags();
   toggleBulkLabelingOverlay();
   clearAllSelections();
-  if (isGridView) renderGridView();
-  else updateImage();
+  applyFilter();
 }
 
 // ファイル操作関連
@@ -805,6 +852,8 @@ function removeFromLists(path) {
   if (currentIndex >= filteredImages.length && filteredImages.length > 0) {
     currentIndex = filteredImages.length - 1;
   }
+  const el = gridView.querySelector(`.grid-item[data-path="${CSS.escape(path)}"]`);
+  if (el) el.remove();
 }
 
 // ドラッグ＆ドロップ
@@ -984,7 +1033,7 @@ window.addEventListener('keydown', (e) => {
       const cols = getGridColumns();
       if (cols > 0) {
         currentIndex = Math.max(0, currentIndex - cols);
-        updateImage();
+        updateImage(true);
       }
     } else {
       currentModeIndex = (currentModeIndex + 1) % MODES.length;
@@ -996,7 +1045,7 @@ window.addEventListener('keydown', (e) => {
       const cols = getGridColumns();
       if (cols > 0) {
         currentIndex = Math.min(filteredImages.length - 1, currentIndex + cols);
-        updateImage();
+        updateImage(true);
       }
     } else {
       currentModeIndex = (currentModeIndex - 1 + MODES.length) % MODES.length;
