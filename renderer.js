@@ -182,15 +182,8 @@ function toggleGridView() {
 }
 
 function getGridColumns() {
-  const items = gridView.querySelectorAll('.grid-item');
-  if (items.length <= 1) return 0;
-  const firstRect = items[0].getBoundingClientRect();
-  for (let i = 1; i < items.length; i++) {
-    if (items[i].getBoundingClientRect().top > firstRect.top) {
-      return i;
-    }
-  }
-  return items.length;
+  const gridStyle = window.getComputedStyle(gridView);
+  return gridStyle.gridTemplateColumns.split(' ').length;
 }
 
 function renderGridView() {
