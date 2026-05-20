@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.1](https://github.com/blue1st/photo-slide/compare/v1.7.0...v1.7.1) (2026-05-20)
+
+
+### Bug Fixes
+
+* W/Dの移動 ([c7f763d](https://github.com/blue1st/photo-slide/commit/c7f763d4e97f70e36b9b7d96c66084e85d47a685))
+
 # [1.7.0](https://github.com/blue1st/photo-slide/compare/v1.6.0...v1.7.0) (2026-05-20)
 
 
