@@ -1,5 +1,12 @@
 # Changelog
 
+# [1.8.0](https://github.com/blue1st/photo-slide/compare/v1.7.1...v1.8.0) (2026-07-13)
+
+
+### Features
+
+* implement progressive background tag loading with UI progress indicator ([aea5471](https://github.com/blue1st/photo-slide/commit/aea5471b30251e402e557904350137e4109c5984))
+
 ## [1.7.1](https://github.com/blue1st/photo-slide/compare/v1.7.0...v1.7.1) (2026-05-20)
 
 
