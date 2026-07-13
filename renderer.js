@@ -73,6 +73,7 @@ let selectedImages = new Set();
 let bulkAddTags = new Set();
 let bulkRemoveTags = new Set();
 let isUntaggedOnlyFilter = false;
+let currentFolderPath = '';
 
 const MODES = [
   { id: 'contain', label: '収まる', class: 'mode-contain' },
@@ -151,7 +152,14 @@ async function updateImage(onlySelection = false) {
   imgElement.src = `file://${imagePath}`;
   fileNameDisplay.innerText = imagePath.split('/').pop();
   
-  currentImageTags = imageTagsMap[imagePath] || await window.electronAPI.getTags(imagePath);
+  if (imageTagsMap[imagePath] === undefined) {
+    // If not loaded in background yet, fetch tags on demand and cache them
+    const fetchedTags = await window.electronAPI.getTags(imagePath);
+    if (imageTagsMap[imagePath] === undefined) {
+      imageTagsMap[imagePath] = fetchedTags;
+    }
+  }
+  currentImageTags = imageTagsMap[imagePath] || [];
   renderCurrentImageTags();
 }
 
@@ -392,15 +400,16 @@ async function loadFolder(path) {
   try {
     images = await window.electronAPI.readImages(path);
     if (images.length === 0) {
-      // フォルダが存在しないか空の場合（Electron APIの実装に依存するが）
-      // ここでエラーチェックを強化できる
+      // フォルダが存在しないか空の場合
     }
   } catch (err) {
     alert('フォルダを開けませんでした。削除されている可能性があります。');
     return;
   }
 
-  imageTagsMap = await window.electronAPI.getAllTags(images);
+  // Reset tag states and trigger background loading
+  currentFolderPath = path;
+  imageTagsMap = {};
   
   updateUniqueTags();
   
@@ -409,6 +418,65 @@ async function loadFolder(path) {
   updateImage();
 
   saveToHistory(path);
+
+  // Background load tags progressively
+  loadTagsInBackground(path, images);
+}
+
+async function loadTagsInBackground(folderPath, imagesList) {
+  const statusEl = document.getElementById('tag-loading-status');
+  if (statusEl) {
+    statusEl.innerText = `タグ読み込み中... (0/${imagesList.length})`;
+    statusEl.classList.remove('hidden');
+  }
+
+  const batchSize = 100;
+  let loadedCount = 0;
+
+  for (let i = 0; i < imagesList.length; i += batchSize) {
+    if (currentFolderPath !== folderPath) return;
+
+    const chunk = imagesList.slice(i, i + batchSize);
+    try {
+      const tagsBatch = await window.electronAPI.getAllTags(chunk);
+      if (currentFolderPath !== folderPath) return;
+
+      // Merge tags into imageTagsMap only for files still present in the directory
+      for (const [fp, tags] of Object.entries(tagsBatch)) {
+        if (images.includes(fp)) {
+          imageTagsMap[fp] = tags;
+        }
+      }
+      loadedCount += chunk.length;
+
+      if (statusEl) {
+        statusEl.innerText = `タグ読み込み中... (${loadedCount}/${imagesList.length})`;
+      }
+
+      updateUniqueTags();
+
+      // If active filter is in use, re-run filtering progressively
+      if (includeTags.size > 0 || excludeTags.size > 0 || isUntaggedOnlyFilter) {
+        applyFilter();
+      }
+
+      // If current image tags are updated, refresh current tag display
+      const currentImagePath = filteredImages[currentIndex];
+      if (chunk.includes(currentImagePath)) {
+        currentImageTags = imageTagsMap[currentImagePath] || [];
+        renderCurrentImageTags();
+      }
+    } catch (err) {
+      console.error('Error loading tags in background:', err);
+    }
+    
+    // Yield to the event loop to ensure UI thread responsiveness
+    await new Promise(resolve => setTimeout(resolve, 50));
+  }
+
+  if (currentFolderPath === folderPath && statusEl) {
+    statusEl.classList.add('hidden');
+  }
 }
 
 function saveToHistory(path) {
@@ -514,6 +582,8 @@ function renderSuggestions() {
 }
 
 function applyFilter() {
+  const oldCurrentPath = filteredImages[currentIndex];
+
   if (includeTags.size === 0 && excludeTags.size === 0 && !isUntaggedOnlyFilter) {
     filteredImages = [...images];
   } else {
@@ -531,7 +601,14 @@ function applyFilter() {
       return true;
     });
   }
-  currentIndex = 0;
+
+  const newIndex = filteredImages.indexOf(oldCurrentPath);
+  if (newIndex !== -1) {
+    currentIndex = newIndex;
+  } else {
+    currentIndex = 0;
+  }
+  
   updateImage();
 
   // ボタンの表示状態を更新
