@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.8.1](https://github.com/blue1st/photo-slide/compare/v1.8.0...v1.8.1) (2026-09-22)
+
+
+### Bug Fixes
+
+* **homebrew:** use postflight_steps instead of deprecated postflight ([7e8145c](https://github.com/blue1st/photo-slide/commit/7e8145c8b71df6f7b8fe1c326053a9eb842ce534))
+
 # [1.8.0](https://github.com/blue1st/photo-slide/compare/v1.7.1...v1.8.0) (2026-07-13)
 
 
