@@ -43,6 +43,16 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Generate GitHub App Token
+        if: startsWith(github.ref, 'refs/tags/')
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ vars.TAP_APP_ID }}
+          private-key: ${{ secrets.TAP_APP_PRIVATE_KEY }}
+          owner: blue1st
+          repositories: homebrew-taps
+
       - name: Update Homebrew Cask
         if: startsWith(github.ref, 'refs/tags/')
         run: |
@@ -53,7 +63,7 @@ jobs:
           SHA256_X64=$(shasum -a 256 dist/PhotoSlide-${VERSION}-x64.dmg | awk '{print $1}')
           
           # Clone tap repository
-          git clone https://x-access-token:${{ secrets.HOMEBREW_TAP_TOKEN }}@github.com/blue1st/homebrew-taps.git homebrew-taps
+          git clone https://x-access-token:${{ steps.app-token.outputs.token }}@github.com/blue1st/homebrew-taps.git homebrew-taps
           
           CASK_FILE="homebrew-taps/Casks/photo-slide.rb"
           mkdir -p homebrew-taps/Casks
