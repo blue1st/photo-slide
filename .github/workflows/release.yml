@@ -53,52 +53,10 @@ jobs:
           owner: blue1st
           repositories: homebrew-taps
 
-      - name: Update Homebrew Cask
+      - name: Update Homebrew Tap
         if: startsWith(github.ref, 'refs/tags/')
+        env:
+          HOMEBREW_TAP_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
-          VERSION=${GITHUB_REF#refs/tags/v}
-          
-          # Calculate SHA256 from local artifacts
-          SHA256_ARM=$(shasum -a 256 dist/PhotoSlide-${VERSION}-arm64.dmg | awk '{print $1}')
-          SHA256_X64=$(shasum -a 256 dist/PhotoSlide-${VERSION}-x64.dmg | awk '{print $1}')
-          
-          # Clone tap repository
-          git clone https://x-access-token:${{ steps.app-token.outputs.token }}@github.com/blue1st/homebrew-taps.git homebrew-taps
-          
-          CASK_FILE="homebrew-taps/Casks/photo-slide.rb"
-          mkdir -p homebrew-taps/Casks
-          
-          cat <<EOF > $CASK_FILE
-          cask "photo-slide" do
-            arch arm: "arm64", intel: "x64"
-
-            version "$VERSION"
-            sha256 arm:   "$SHA256_ARM",
-                   intel: "$SHA256_X64"
-
-            url "https://github.com/${{ github.repository }}/releases/download/v#{version}/PhotoSlide-#{version}-#{arch}.dmg"
-            name "PhotoSlide"
-            desc "Simple photo slideshow application"
-            homepage "https://github.com/${{ github.repository }}"
-
-            app "PhotoSlide.app"
-            
-            postflight_steps do
-              run "/usr/bin/xattr", args: ["-cr", "#{appdir}/PhotoSlide.app"]
-            end
-
-            zap trash: [
-              "~/Library/Application Support/photo-slide",
-              "~/Library/Preferences/com.kawasaki.photo-slide.plist",
-              "~/Library/Saved Application State/com.kawasaki.photo-slide.savedState",
-            ]
-          end
-          EOF
-          
-          # Commit and Push
-          cd homebrew-taps
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add Casks/photo-slide.rb
-          git commit -m "Update photo-slide to ${VERSION}" || exit 0
-          git push
+          chmod +x ./scripts/update-homebrew.sh
+          ./scripts/update-homebrew.sh
