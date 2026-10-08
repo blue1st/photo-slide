@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.8.2](https://github.com/blue1st/photo-slide/compare/v1.8.1...v1.8.2) (2026-10-08)
+
+
+### Bug Fixes
+
+* **homebrew:** extract update-homebrew.sh and use caveats instead of postflight_steps ([dfa7195](https://github.com/blue1st/photo-slide/commit/dfa7195001876e1ea2313f6332e86b8ba9e99976))
+
 ## [1.8.1](https://github.com/blue1st/photo-slide/compare/v1.8.0...v1.8.1) (2026-09-22)
 
 
